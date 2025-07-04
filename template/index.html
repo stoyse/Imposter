@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imposter - Social Deduction Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Background animation -->
+        <div class="bg-animation">
+            <div class="floating-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+                <div class="shape shape-4"></div>
+                <div class="shape shape-5"></div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="game-header">
+            <nav class="nav-bar">
+                <div class="logo">
+                    <span class="logo-text">IMPOSTER</span>
+                    <div class="logo-glitch"></div>
+                </div>
+                <div class="nav-links">
+                    <a href="#how-to-play" class="nav-link">How to Play</a>
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="/about" class="nav-link">About</a>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="title-main">IMPOSTER</span>
+                    <span class="title-sub">Social Deduction Game</span>
+                </h1>
+                <p class="hero-description">
+                    A browser-based social deduction game where players join a shared voice room and try to uncover the hidden imposters among them. With real-time voice chat, timed turns, and quick decisions, Imposter creates tense, hilarious moments of bluffing, deduction, and betrayal.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="startGame()">
+                        <span class="btn-text">START GAME</span>
+                        <div class="btn-glow"></div>
+                    </button>
+                    <button class="btn btn-secondary" onclick="joinGame()">
+                        <span class="btn-text">JOIN ROOM</span>
+                    </button>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">1000+</span>
+                        <span class="stat-label">Games Played</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">50+</span>
+                        <span class="stat-label">Active Players</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">24/7</span>
+                        <span class="stat-label">Online</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="game-preview">
+                    <div class="players-circle">
+                        <div class="player player-1">
+                            <div class="player-avatar"></div>
+                            <div class="player-name">Player 1</div>
+                        </div>
+                        <div class="player player-2">
+                            <div class="player-avatar impostor"></div>
+                            <div class="player-name">Impostor</div>
+                        </div>
+                        <div class="player player-3">
+                            <div class="player-avatar"></div>
+                            <div class="player-name">Player 3</div>
+                        </div>
+                        <div class="player player-4">
+                            <div class="player-avatar"></div>
+                            <div class="player-name">Player 4</div>
+                        </div>
+                    </div>
+                    <div class="center-word">
+                        <span class="secret-word">???</span>
+                        <div class="word-hint">Secret Word</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How to Play Section -->
+        <section id="how-to-play" class="how-to-play">
+            <h2 class="section-title">How to Play</h2>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <h3>Join a Room</h3>
+                        <p>Create or join a voice room with your friends. Wait for everyone to connect.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <h3>Get Your Role</h3>
+                        <p>Most players get a secret word. Imposters only get a vague hint about the category.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <h3>Describe the Word</h3>
+                        <p>Take turns speaking aloud to describe the word without giving it away to the imposters.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">04</div>
+                    <div class="step-content">
+                        <h3>Vote & Win</h3>
+                        <p>After everyone speaks, vote on who you think the imposters are. Majority wins!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features">
+            <h2 class="section-title">Game Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎙️</div>
+                    <h3>Real-time Voice Chat</h3>
+                    <p>Communicate with other players using built-in voice chat for authentic social deduction.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⏱️</div>
+                    <h3>Timed Turns</h3>
+                    <p>Keep the game moving with automatic turn timers that create pressure and excitement.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎭</div>
+                    <h3>Bluffing & Deduction</h3>
+                    <p>Use your wit to deceive others or uncover the truth through careful observation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Browser-based</h3>
+                    <p>No downloads required. Play instantly in your web browser with friends anywhere.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="game-footer">
+            <div class="footer-content">
+                <div class="footer-text">
+                    <p>&copy; 2024 Imposter Game. Built for social deduction enthusiasts.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="/about">About</a>
+                    <a href="#contact">Contact</a>
+                    <a href="#privacy">Privacy</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
