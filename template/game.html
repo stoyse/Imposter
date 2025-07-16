@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game - Imposter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="game-container">
+
+
+        <div class="game-content">
+            <div class="game-status" id="gameStatus">
+                <div class="loading-screen" id="loadingScreen">
+                    <div class="loading-spinner"></div>
+                    <h2>🎭 Rollen werden zugewiesen...</h2>
+                    <p>Bitte warten Sie, während wir bestimmen, wer die Betrüger sind</p>
+                    <div class="loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="players-in-game">
+                <h3>Spieler im Spiel</h3>
+                <div id="countdownTimer" style="font-size:1.5rem; color:#ffd700; font-weight:700; margin-bottom:1em;">Abstimmung endet in: 03:00</div>
+                <div id="gamePlayers" style="display: flex; flex-wrap: wrap; gap: 1.5rem; width: 100%; justify-content: flex-start; align-items: stretch;">
+                    <!-- Players will be loaded here -->
+                </div>
+                <div id="voteInfo" style="margin-top:1.5em;"></div>
+            </div>
+        </div>
+        
+        <!-- Role Bar - Now static, not overlay -->
+        <div class="role-bar" id="roleBar" style="display: none; position: static; margin-top: 2rem; margin-bottom: 2rem;">
+            <div class="role-content">
+                <div class="role-icon" id="roleIcon">🎭</div>
+                <div class="role-text">
+                    <div class="role-title" id="roleTitle">IHRE ROLLE</div>
+                    <div class="role-name" id="roleName">WIRD GELADEN...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+    const socket = io();
+    const roomCode = "{{ room_code }}";
+
+    // Initialize stars background
+    function createStars() {
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+    }
+
+    function goBackToLobby() {
+        window.location.href = `/lobby/${roomCode}?name=${encodeURIComponent(playerName)}`;
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#00f5ff' : type === 'error' ? '#ff0080' : '#ffd700'};
+            color: #000;
+            padding: 1rem;
+            border-radius: 8px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Initialize
+    createStars();
+    
+    // Get player name from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const playerName = urlParams.get('name') || 'Anonymous';
+    
+    console.log('Game page loaded for room:', roomCode);
+    
+    // --- Voting Results Modal/Page ---
+    function showVotingResults(votes) {
+        // votes: { voter1: voted1, voter2: voted2, ... }
+        // Create overlay
+        let overlay = document.getElementById('votingResultsOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'votingResultsOverlay';
+            overlay.style.position = 'fixed';
+            overlay.style.top = 0;
+            overlay.style.left = 0;
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0,0,0,0.92)';
+            overlay.style.zIndex = 2000;
+            overlay.style.display = 'flex';
+            overlay.style.flexDirection = 'column';
+            overlay.style.justifyContent = 'center';
+            overlay.style.alignItems = 'center';
+        }
+
+        // Get impostors and vote counts from server-side data if available
+        const impostors = window.lastImpostors || [];
+        // Count votes for each player
+        const voteCounts = {};
+        Object.values(votes).forEach(voted => {
+            if (!voted) return;
+            voteCounts[voted] = (voteCounts[voted] || 0) + 1;
+        });
+
+        // Collect all player names (voters and voted)
+        const allPlayers = Array.from(new Set([
+            ...Object.keys(votes),
+            ...Object.values(votes).filter(Boolean)
+        ]));
+
+        overlay.innerHTML = `
+            <div style="background:#181a2b; color:#fff; border-radius:18px; padding:2.5em 2em; min-width:320px; max-width:90vw; box-shadow:0 8px 32px #000a; text-align:center;">
+                <h2 style="color:#ffd700; margin-bottom:1.2em;">Abstimmungsergebnisse</h2>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:1.5em;">
+                    <thead>
+                        <tr style="background:#23244a; color:#ffd700;">
+                            <th style="padding:0.5em 1em; border-radius:8px 0 0 8px;">Spieler</th>
+                            <th style="padding:0.5em 1em;">Hat gewählt für</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(votes).map(([voter, voted]) => `
+                            <tr>
+                                <td style="padding:0.5em 1em; border-bottom:1px solid #23244a;${impostors.includes(voter) ? ' color:#ff0080; font-weight:700;' : ''}">${voter}${impostors.includes(voter) ? ' <span style=\'color:#ff0080\'>(Impostor)</span>' : ''}</td>
+                                <td style="padding:0.5em 1em; border-bottom:1px solid #23244a; font-weight:700; color:#00f5ff;">${voted || '<span style=\'color:#ff0080\'>-</span>'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3 style="color:#ffd700; margin-bottom:0.5em;">Stimmen erhalten</h3>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:1.5em;">
+                    <thead>
+                        <tr style="background:#23244a; color:#ffd700;">
+                            <th style="padding:0.5em 1em; border-radius:8px 0 0 8px;">Spieler</th>
+                            <th style="padding:0.5em 1em; border-radius:0 8px 8px 0;">Anzahl Stimmen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allPlayers.map(player => `
+                            <tr>
+                                <td style="padding:0.5em 1em; border-bottom:1px solid #23244a;${impostors.includes(player) ? ' color:#ff0080; font-weight:700;' : ''}">${player}${impostors.includes(player) ? ' <span style=\'color:#ff0080\'>(Impostor)</span>' : ''}</td>
+                                <td style="padding:0.5em 1em; border-bottom:1px solid #23244a; font-weight:700; color:#ffd700;">${voteCounts[player] || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <button onclick="window.location.reload()" style="background:#ffd700; color:#181a2b; font-weight:700; border:none; border-radius:8px; padding:0.7em 2em; font-size:1.1em; cursor:pointer;">Zurück zur Lobby</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    // Socket event listeners
+    socket.on('connect', () => {
+        console.log('Connected to game server');
+        // Join the game room automatically
+        socket.emit('join_game', {
+            room_code: roomCode,
+            player_name: playerName
+        });
+        showNotification('Connected to game!', 'success');
+        // Request timer from server
+        requestVotingTimer();
+    });
+
+    socket.on('role_assigned', (data) => {
+        displayRole(data);
+    });
+
+    socket.on('error', (data) => {
+        showNotification(data.message, 'error');
+    });
+
+    socket.on('game_players_update', (data) => {
+        updateGamePlayersList(data.players);
+    });
+
+    socket.on('game_joined', (data) => {
+        updateGamePlayersList(data.players);
+        if (data.status === 'in_game') {
+            // Game already in progress
+        }
+        requestVotingTimer();
+    });
+
+    // Listen for all socket events for debugging
+    socket.onAny((eventName, ...args) => {
+        //console.log(`Socket event received: ${eventName}`, args);
+    });
+
+    // Add a test function to manually trigger role display
+    window.testRole = function(isImpostor = false) {
+        displayRole({
+            is_impostor: isImpostor,
+            your_role: isImpostor ? 'impostor' : 'innocent',
+            total_impostors: 1,
+            total_players: 4
+        });
+    };
+
+    function updateGamePlayersList(players) {
+        const gamePlayers = document.getElementById('gamePlayers');
+        if (!gamePlayers) return;
+        gamePlayers.innerHTML = '';
+        // Get own name for disabling self-vote
+        const myName = playerName;
+        players.forEach(player => {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'game-player-item';
+            playerDiv.innerHTML = `
+                <button class="btn btn-secondary vote-impostor-btn" data-player="${encodeURIComponent(player.name)}" ${player.name === myName ? 'disabled' : ''}>${player.name}</button>
+            `;
+            gamePlayers.appendChild(playerDiv);
+        });
+        // Add click listeners for voting
+        document.querySelectorAll('.vote-impostor-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (window.votingEnded) return;
+                const votedPlayer = decodeURIComponent(this.getAttribute('data-player'));
+                voteImpostor(votedPlayer);
+            });
+        });
+    }
+
+    // --- Voting Timer: Server-driven ---
+    let votingEnded = false;
+    window.votingEnded = false;
+    function updateVotingTimer(secondsLeft) {
+        const timerDisplay = document.getElementById('countdownTimer');
+        if (timerDisplay) {
+            if (secondsLeft > 0) {
+                const min = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+                const sec = String(secondsLeft % 60).padStart(2, '0');
+                timerDisplay.textContent = `Abstimmung endet in: ${min}:${sec}`;
+            } else {
+                timerDisplay.textContent = 'Abstimmung beendet!';
+            }
+        }
+    }
+    // Listen for timer updates from server
+    socket.on('voting_timer_update', (data) => {
+        updateVotingTimer(data.seconds_left);
+        if (typeof data.voting_ended !== 'undefined') {
+            votingEnded = data.voting_ended;
+            window.votingEnded = data.voting_ended;
+        } else if (data.seconds_left === 0) {
+            votingEnded = true;
+            window.votingEnded = true;
+        }
+        // Disable voting buttons if ended
+        if (window.votingEnded) {
+            document.querySelectorAll('.vote-impostor-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+    });
+    // On connect or reload, request timer from server
+    function requestVotingTimer() {
+        socket.emit('get_voting_timer', { room_code: roomCode });
+    }
+
+    // Send vote to backend
+    function voteImpostor(playerName) {
+        socket.emit('vote_impostor', {
+            room_code: roomCode,
+            voted_player: playerName
+        });
+        document.getElementById('voteInfo').innerHTML = `<span style="color:#ffd700;font-weight:600;">Du hast für <b>${playerName}</b> als Impostor abgestimmt.</span>`;
+    }
+
+    function displayRole(roleData) {
+        // Hide loading screen
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            loadingScreen.style.display = 'none';
+        }
+        // Show and configure role bar
+        const roleBar = document.getElementById('roleBar');
+        const roleIcon = document.getElementById('roleIcon');
+        const roleTitle = document.getElementById('roleTitle');
+        const roleName = document.getElementById('roleName');
+        const isImpostor = roleData.is_impostor;
+        // Configure role bar
+        if (isImpostor) {
+            roleBar.className = 'role-bar impostor';
+            roleIcon.textContent = '🕵️';
+            roleTitle.textContent = 'SIE SIND EIN';
+            roleName.textContent = 'IMPOSTOR';
+        } else {
+            roleBar.className = 'role-bar innocent';
+            roleIcon.textContent = '👥';
+            roleTitle.textContent = 'SIE SIND';
+            roleName.textContent = 'UNSCHULDIG';
+        }
+        // Show role bar with animation
+        roleBar.style.display = 'block';
+        // Add game info to the main content
+        const gameStatus = document.getElementById('gameStatus');
+        let infoHtml = '';
+        infoHtml += '<div class="game-info-display">';
+        infoHtml += '<h2>Spiel-Informationen</h2>';
+        infoHtml += '<div class="info-grid">';
+        infoHtml += `<div class="info-card"><div class="info-number">${roleData.total_players}</div><div class="info-label">Gesamt Spieler</div></div>`;
+        infoHtml += `<div class="info-card"><div class="info-number">${roleData.total_impostors}</div><div class="info-label">Impostor${roleData.total_impostors > 1 ? 'en' : ''}</div></div>`;
+        infoHtml += '</div>';
+        infoHtml += '<div class="mission-info">';
+        if (isImpostor) {
+            infoHtml += '<h3>🎭 Ihre Mission</h3>';
+            infoHtml += '<p>Mischen Sie sich unter die unschuldigen Spieler und vermeiden Sie es, entdeckt zu werden</p>';
+            infoHtml += '<p class="strategy">Hören Sie aufmerksam zu und geben Sie glaubwürdige Antworten, ohne das geheime Wort zu kennen</p>';
+        } else {
+            infoHtml += '<h3>🔍 Ihre Mission</h3>';
+            infoHtml += `<p>Arbeiten Sie zusammen, um den/die Impostor${roleData.total_impostors > 1 ? 'en' : ''} zu identifizieren und auszuwählen</p>`;
+            infoHtml += '<p class="strategy">Hören Sie auf verdächtige Antworten und stimmen Sie weise ab!</p>';
+        }
+        infoHtml += '</div>';
+        infoHtml += '<div class="role-secret-info">';
+        if (isImpostor) {
+            infoHtml += `<div class='secret-hint-box'><h3>Ihr Hinweis</h3><div class='secret-hint'>`;
+            if (typeof roleData.hint === 'string' && roleData.hint.trim()) {
+                infoHtml += roleData.hint;
+            } else {
+                infoHtml += "<span style='color:red'>Kein Hinweis erhalten.</span>";
+            }
+            infoHtml += '</div></div>';
+        } else {
+            infoHtml += `<div class='secret-word-box'><h3>Geheimes Wort</h3><div class='secret-word'>`;
+            if (typeof roleData.word === 'string' && roleData.word.trim()) {
+                infoHtml += roleData.word;
+            } else {
+                infoHtml += "<span style='color:red'>Kein Wort erhalten.</span>";
+            }
+            infoHtml += '</div></div>';
+        }
+        infoHtml += '</div>';
+        infoHtml += '</div>';
+        gameStatus.innerHTML = infoHtml;
+        // Show notification
+        showNotification(`Sie sind ${isImpostor ? 'ein IMPOSTOR' : 'UNSCHULDIG'}!`, 
+                       isImpostor ? 'error' : 'success');
+    }
+
+    // --- Listen for voting results from server ---
+    // Save impostors for voting results display
+    socket.on('impostors_revealed', (data) => {
+        if (data && data.impostors) {
+            window.lastImpostors = data.impostors;
+        }
+    });
+    socket.on('voting_results', (data) => {
+        if (data && data.votes) {
+            showVotingResults(data.votes);
+        }
+    });
+    </script>
+</body>
+</html>

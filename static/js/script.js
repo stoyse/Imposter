@@ -23,11 +23,15 @@ function startGame() {
         btn.style.transform = '';
     }, 150);
 
-    // Simulate game start (you can replace this with actual game logic)
-    showNotification('Starting new game...', 'success');
+    // Get player name
+    const playerName = prompt('Enter your name:');
+    if (!playerName || playerName.trim() === '') {
+        showNotification('Please enter a valid name!', 'error');
+        return;
+    }
     
-    // In a real implementation, you might redirect to a game room
-    // window.location.href = '/game/new';
+    showNotification('Creating lobby...', 'info');
+    createLobby(playerName.trim());
 }
 
 function joinGame() {
@@ -38,13 +42,30 @@ function joinGame() {
         btn.style.transform = '';
     }, 150);
 
-    // Show room code input (you can enhance this)
-    const roomCode = prompt('Enter room code:');
-    if (roomCode) {
-        showNotification(`Joining room: ${roomCode}...`, 'info');
-        // In a real implementation, you might validate and join the room
-        // window.location.href = `/game/join/${roomCode}`;
-    }
+    // Redirect to join page
+    window.location.href = '/join';
+}
+
+function createLobby(playerName) {
+    // Connect to socket and create lobby
+    const socket = io();
+    
+    socket.on('connect', () => {
+        socket.emit('create_lobby', {
+            player_name: playerName
+        });
+    });
+    
+    socket.on('lobby_created', (data) => {
+        showNotification('Lobby created successfully!', 'success');
+        setTimeout(() => {
+            window.location.href = `/lobby/${data.room_code}?name=${encodeURIComponent(data.player_name)}`;
+        }, 1000);
+    });
+    
+    socket.on('error', (data) => {
+        showNotification('Error: ' + data.message, 'error');
+    });
 }
 
 // Notification system

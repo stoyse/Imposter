@@ -1,0 +1,1121 @@
+/* Unified Game Style - Based on Imposter Selection */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #00f5ff;
+    --secondary-color: #ff0080;
+    --accent-color: #ffd700;
+    --bg-dark: #0a0a0f;
+    --bg-darker: #05050a;
+    --text-light: #ffffff;
+    --text-gray: #b0b0b0;
+    --gradient-1: linear-gradient(135deg, #00f5ff, #0080ff);
+    --gradient-2: linear-gradient(135deg, #ff0080, #ff4040);
+    --gradient-3: linear-gradient(135deg, #ffd700, #ffaa00);
+    --shadow-glow: 0 0 20px rgba(0, 245, 255, 0.3);
+    --shadow-pink: 0 0 20px rgba(255, 0, 128, 0.3);
+}
+
+body {
+    font-family: 'Orbitron', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-light);
+    overflow-x: hidden;
+    line-height: 1.6;
+    position: relative;
+}
+
+/* Stars background for all pages */
+.stars {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: var(--bg-dark);
+}
+
+.star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: twinkle 3s infinite ease-in-out;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Common container styles */
+.game-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Page title style - consistent across pages */
+.page-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--accent-color);
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+/* Unified content container */
+.content-container {
+    width: 100%;
+    background: rgba(10, 10, 15, 0.7);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    margin-bottom: 2rem;
+}
+
+/* Button styles unified */
+.btn {
+    position: relative;
+    padding: 1rem 2rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.btn-primary {
+    background: var(--gradient-1);
+    color: var(--bg-dark);
+    box-shadow: var(--shadow-glow);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.btn-secondary:hover {
+    background: var(--primary-color);
+    color: var(--bg-dark);
+    transform: translateY(-2px);
+}
+
+/* Countdown display */
+.countdown-display {
+    text-align: center;
+    margin: 2rem auto;
+}
+
+.countdown-label {
+    font-size: 1.2rem;
+    color: var(--text-gray);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.countdown-timer {
+    font-family: 'Orbitron', monospace;
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--accent-color);
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    transition: all 0.3s ease;
+}
+
+.countdown-timer.warning {
+    color: var(--secondary-color);
+    text-shadow: 0 0 30px rgba(255, 0, 128, 0.5);
+}
+
+.countdown-timer.urgent {
+    color: #ff4444;
+    text-shadow: 0 0 30px rgba(255, 68, 68, 0.8);
+    animation: pulse 0.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Input fields styling */
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-gray);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.input-group input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    color: var(--text-light);
+    padding: 1rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(0, 245, 255, 0.2);
+}
+
+.input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Options container for buttons on index page */
+.options-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.option-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    min-width: 220px;
+    text-align: center;
+    color: var(--text-light);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.option-btn:hover {
+    background: rgba(0, 245, 255, 0.1);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-glow);
+}
+
+/* Room code display styling */
+.room-code-display {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.room-code-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-gray);
+    margin-bottom: 0.5rem;
+}
+
+.room-code {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--accent-color);
+    letter-spacing: 5px;
+    margin-bottom: 0.5rem;
+}
+
+.copy-btn {
+    background: transparent;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 0.3rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.copy-btn:hover {
+    background: rgba(255, 215, 0, 0.1);
+}
+
+/* Game info box */
+.game-info {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.game-info h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.info-text {
+    color: var(--text-gray);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* Player list styling */
+.players-list {
+    margin-bottom: 1.5rem;
+}
+
+.player-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    margin-bottom: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.player-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.player-item.ready {
+    border-left: 3px solid var(--primary-color);
+}
+
+.host-badge {
+    background: var(--gradient-3);
+    color: var(--bg-dark);
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+/* Voting options styling */
+.options-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.option-btn {
+    background: rgba(0, 245, 255, 0.1);
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: var(--text-light);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    text-align: center;
+}
+
+.option-btn:hover {
+    background: rgba(0, 245, 255, 0.2);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-glow);
+}
+
+.option-btn.selected {
+    background: var(--gradient-1);
+    color: var(--bg-dark);
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+/* Game information styling */
+.game-info {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.game-info h3 {
+    font-family: 'Orbitron', monospace;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.info-text {
+    color: var(--text-gray);
+}
+
+/* Role bar styling */
+.role-bar {
+    width: 100%;
+    padding: 2rem;
+    margin: 2rem 0;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.role-bar.impostor {
+    background: linear-gradient(135deg, #ff0080, #cc0066);
+    border: 2px solid #ff0080;
+}
+
+.role-bar.innocent {
+    background: linear-gradient(135deg, #00f5ff, #0099cc);
+    border: 2px solid #00f5ff;
+}
+
+.role-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.role-icon {
+    font-size: 4rem;
+    animation: bounce 2s infinite;
+}
+
+.role-text {
+    color: white;
+    text-align: center;
+}
+
+.role-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+}
+
+.role-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 900;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    letter-spacing: 3px;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Notification styling */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--accent-color);
+    color: var(--bg-dark);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    z-index: 100;
+    font-weight: 700;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s forwards;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Results overlay */
+.results-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.results-container {
+    background: #181a2b;
+    color: var(--text-light);
+    border-radius: 18px;
+    padding: 2.5rem 2rem;
+    min-width: 320px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    text-align: center;
+}
+
+.results-title {
+    font-family: 'Orbitron', monospace;
+    color: var(--accent-color);
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+}
+
+.results-table th {
+    background: #23244a;
+    color: var(--accent-color);
+    padding: 0.8rem;
+    text-align: left;
+}
+
+.results-table th:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+.results-table th:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+.results-table td {
+    padding: 0.8rem;
+    border-bottom: 1px solid #23244a;
+}
+
+/* Game Page Specific Styles */
+.role-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.role-icon {
+    font-size: 2.5rem;
+    margin-right: 1.5rem;
+}
+
+.role-details {
+    text-align: left;
+}
+
+.role-title {
+    color: var(--text-gray);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.role-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0.2rem 0;
+    color: var(--primary-color);
+}
+
+.word-container, .hint-container {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.word-container {
+    background: rgba(0, 245, 255, 0.1);
+    border: 1px solid var(--primary-color);
+}
+
+.hint-container {
+    background: rgba(255, 0, 128, 0.1);
+    border: 1px solid var(--secondary-color);
+}
+
+.secret-word-label, .hint-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+}
+
+.secret-word {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: 2px;
+}
+
+.hint-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+}
+
+.game-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.player-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.player-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.player-card.current-player {
+    border: 1px solid var(--primary-color);
+    background: rgba(0, 245, 255, 0.1);
+}
+
+.player-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--gradient-1);
+    color: var(--bg-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0 auto 1rem;
+}
+
+.player-name {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.vote-btn {
+    background: rgba(0, 245, 255, 0.1);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.vote-btn:hover:not([disabled]) {
+    background: rgba(0, 245, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.vote-btn.voted {
+    background: var(--primary-color);
+    color: var(--bg-dark);
+}
+
+.vote-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Voting Results Overlay */
+.voting-results-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.results-container {
+    background: var(--bg-darker);
+    border: 2px solid var(--primary-color);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.results-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    color: var(--accent-color);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.imposters-reveal {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 0, 128, 0.1);
+    border: 1px solid var(--secondary-color);
+    border-radius: 8px;
+}
+
+.imposters-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.imposter-name {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    font-weight: 700;
+    padding: 0.5rem 1.5rem;
+    background: rgba(255, 0, 128, 0.2);
+    border-radius: 6px;
+}
+
+.vote-results-list {
+    margin-top: 2rem;
+}
+
+.vote-result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.voted-player {
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.vote-count {
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+.vote-detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.3rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.voter {
+    color: var(--text-light);
+}
+
+.voted-arrow {
+    color: var(--text-gray);
+}
+
+.voted-for {
+    color: var(--primary-color);
+}
+
+.impostor-result {
+    background: rgba(255, 0, 128, 0.2) !important;
+    border-left: 3px solid var(--secondary-color);
+}
+
+.impostor-result .voted-player {
+    color: var(--secondary-color);
+    font-weight: 700;
+}
+
+/* Loading Screen */
+.loading-screen {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(0, 245, 255, 0.3);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    margin: 0 auto 2rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-dots {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.loading-dots span {
+    width: 10px;
+    height: 10px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 1s;
+}
+
+/* Notification styling - multiple votes */
+.notification.multiple-votes {
+    background: var(--accent-color);
+    color: var(--bg-dark);
+    font-weight: bold;
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Voting Instructions */
+.voting-instructions {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 0.8rem;
+    border-radius: 8px;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid var(--accent-color);
+}
+
+.voting-instructions p {
+    margin: 0;
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+/* Features Section */
+.features-section {
+    margin: 3rem 0;
+    text-align: center;
+}
+
+.features-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+    text-shadow: var(--shadow-glow);
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.feature-item {
+    background: rgba(0, 245, 255, 0.05);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.feature-item:hover {
+    background: rgba(0, 245, 255, 0.1);
+    border-color: var(--primary-color);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-glow);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.feature-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.feature-desc {
+    color: var(--text-gray);
+    font-size: 0.9rem;
+}
+
+/* How to Play Steps */
+.how-to-play {
+    margin: 2rem 0;
+}
+
+.play-step {
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: rgba(255, 0, 128, 0.05);
+    border: 1px solid rgba(255, 0, 128, 0.2);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.play-step:hover {
+    background: rgba(255, 0, 128, 0.1);
+    border-color: var(--secondary-color);
+    transform: translateX(10px);
+}
+
+.step-number {
+    background: var(--gradient-2);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.step-content {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.step-icon {
+    font-size: 1.8rem;
+    margin-right: 1rem;
+}
+
+.step-title {
+    color: var(--secondary-color);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-right: 1rem;
+    min-width: 120px;
+}
+
+.step-desc {
+    color: var(--text-gray);
+    font-size: 0.9rem;
+}
+
+/* Game Modes */
+.game-modes {
+    margin-top: 2rem;
+    text-align: left;
+}
+
+.game-modes h4 {
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.modes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.mode-item {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem;
+    background: rgba(255, 215, 0, 0.05);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.mode-item:hover {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: var(--accent-color);
+}
+
+.mode-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.mode-name {
+    color: var(--accent-color);
+    font-weight: 700;
+    margin-right: 1rem;
+    min-width: 120px;
+}
+
+.mode-desc {
+    color: var(--text-gray);
+    font-size: 0.9rem;
+}
+
+/* Tips Section */
+.tips-section {
+    margin: 3rem 0;
+    text-align: center;
+}
+
+.tips-section h3 {
+    color: var(--accent-color);
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 1.5rem;
+    background: rgba(255, 215, 0, 0.05);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 15px;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.tip-item:hover {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: var(--accent-color);
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.tip-icon {
+    font-size: 1.8rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.tip-text {
+    color: var(--text-gray);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.tip-text strong {
+    color: var(--accent-color);
+}
+
+/* Responsive Design for New Sections */
+@media (max-width: 768px) {
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .play-step {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .step-content {
+        flex-direction: column;
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .step-title {
+        margin: 0.5rem 0;
+        min-width: auto;
+    }
+    
+    .tips-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .mode-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .mode-name {
+        margin: 0.5rem 0;
+        min-width: auto;
+    }
+}

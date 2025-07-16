@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Lobby - Imposter Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unified-style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="game-container">
+        <h1 class="page-title">🎮 GAME LOBBY</h1>
+        
+        <div class="room-code-display">
+            <div class="room-code-label">ROOM CODE</div>
+            <div class="room-code" id="roomCode">{{ room_code }}</div>
+            <button class="copy-btn" onclick="copyRoomCode()">📋 Copy</button>
+        </div>
+        
+        <div class="content-container">
+            <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-color); font-family: 'Orbitron', monospace;">PLAYERS IN LOBBY</h3>
+            
+            <div class="players-list" id="playersList">
+                <!-- Players will be dynamically added here -->
+            </div>
+            
+            <div style="text-align: center; margin: 1rem 0;">
+                <span id="playerCount">0</span>/<span id="maxPlayers">10</span> Players
+                | <span id="readyCount">0</span> Ready
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn btn-primary" id="readyBtn" onclick="toggleReady()">
+                    🚀 READY UP
+                </button>
+                <button class="btn btn-secondary" style="margin-left: 1rem;" onclick="leaveLobby()">
+                    🚪 LEAVE LOBBY
+                </button>
+            </div>
+        </div>
+        
+        <div class="content-container">
+            <h3 style="text-align: center; margin-bottom: 1rem; color: var(--primary-color); font-family: 'Orbitron', monospace;">GAME RULES</h3>
+            
+            <ul style="list-style-type: none; padding: 0; color: var(--text-gray);">
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent-color);">➤</span>
+                    Players are divided into Innocents and Imposters
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent-color);">➤</span>
+                    Innocents know a secret word, Imposters only get a hint
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent-color);">➤</span>
+                    Try to identify the Imposters through discussion
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent-color);">➤</span>
+                    Vote for who you think are the Imposters at the end
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const roomCode = "{{ room_code }}";
+        let isReady = false;
+        let isHost = false;
+        
+        // Initialize stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Get player name from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const playerName = urlParams.get('name') || 'Anonymous';
+        
+        // Initialize
+        createStars();
+        
+        // Socket event listeners
+        socket.on('connect', () => {
+            // Join the lobby automatically
+            socket.emit('join_lobby', {
+                room_code: roomCode,
+                player_name: playerName
+            });
+            
+            showNotification('Connected to lobby!');
+        });
+        
+        socket.on('lobby_joined', (data) => {
+            updatePlayersList(data.players);
+        });
+        
+        socket.on('player_joined', (data) => {
+            showNotification(`${data.player_name} joined the lobby`);
+            updatePlayersList(data.players);
+        });
+        
+        socket.on('player_left', (data) => {
+            updatePlayersList(data.players);
+        });
+        
+        socket.on('ready_status_update', (data) => {
+            updatePlayersList(data.players);
+            document.getElementById('readyCount').textContent = data.ready_count;
+            document.getElementById('playerCount').textContent = data.total_players;
+            
+            if (data.all_ready && data.total_players >= 3) {
+                showNotification('All players ready! Game starting...');
+            }
+        });
+        
+        socket.on('redirect_to_selection', (data) => {
+            window.location.href = `/imposter-selection/${data.room_code}?name=${encodeURIComponent(playerName)}`;
+        });
+        
+        socket.on('error', (data) => {
+            showNotification(data.message, 'error');
+        });
+        
+        // Update players list
+        function updatePlayersList(players) {
+            const playersList = document.getElementById('playersList');
+            playersList.innerHTML = '';
+            
+            players.forEach(player => {
+                // Check if current player is host
+                if (player.name === playerName && player.id === players[0].id) {
+                    isHost = true;
+                }
+                
+                const playerDiv = document.createElement('div');
+                playerDiv.className = `player-item${player.ready ? ' ready' : ''}${player.id === players[0].id ? ' host' : ''}`;
+                
+                playerDiv.innerHTML = `
+                    <div class="player-name">${player.name}</div>
+                    <div class="player-status${player.ready ? ' ready' : ''}">
+                        ${player.ready ? '✓ Ready' : 'Not Ready'}
+                    </div>
+                `;
+                
+                playersList.appendChild(playerDiv);
+            });
+            
+            document.getElementById('playerCount').textContent = players.length;
+            
+            // Update ready status for current player
+            for (const player of players) {
+                if (player.name === playerName) {
+                    isReady = player.ready;
+                    document.getElementById('readyBtn').textContent = isReady ? '✓ READY' : '🚀 READY UP';
+                    document.getElementById('readyBtn').classList.toggle('selected', isReady);
+                    break;
+                }
+            }
+        }
+        
+        // Toggle ready status
+        function toggleReady() {
+            isReady = !isReady;
+            socket.emit('player_ready', {
+                room_code: roomCode,
+                ready: isReady
+            });
+            
+            document.getElementById('readyBtn').textContent = isReady ? '✓ READY' : '🚀 READY UP';
+            document.getElementById('readyBtn').classList.toggle('selected', isReady);
+        }
+        
+        // Leave lobby
+        function leaveLobby() {
+            socket.emit('leave_lobby', {
+                room_code: roomCode
+            });
+            
+            window.location.href = '/';
+        }
+        
+        // Copy room code
+        function copyRoomCode() {
+            navigator.clipboard.writeText(roomCode);
+            showNotification('Room code copied to clipboard!');
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification ' + type;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Game - Imposter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <!-- Header -->
+    <header class="game-header">
+        <nav class="nav-bar">
+            <div class="logo">
+                <a href="/" style="text-decoration: none;">
+                    <span class="logo-text">IMPOSTER</span>
+                </a>
+                <div class="logo-glitch"></div>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#how-to-play" class="nav-link">How to Play</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/about" class="nav-link">About</a>
+            </div>
+        </nav>
+    </header>
+    
+    <div class="game-container">
+        <div class="join-page-header">
+            <h1 class="game-title">🕵️ IMPOSTER</h1>
+            <p class="game-subtitle">Join an existing game</p>
+        </div>
+
+        <div class="join-form">
+            <div class="input-group">
+                <label for="playerName">Your Name</label>
+                <input type="text" id="playerName" placeholder="Enter your name" maxlength="20" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="roomCode">Room Code</label>
+                <input type="text" id="roomCode" placeholder="Enter 6-digit code" maxlength="6" required>
+            </div>
+
+            <button class="btn btn-primary" onclick="joinGame()">
+                🎮 Join Game
+            </button>
+
+            <div class="back-link">
+                <a href="/" class="btn btn-secondary">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Initialize stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function joinGame() {
+            const playerName = document.getElementById('playerName').value.trim();
+            const roomCode = document.getElementById('roomCode').value.trim().toUpperCase();
+
+            if (!playerName) {
+                showNotification('Please enter your name', 'error');
+                return;
+            }
+
+            if (!roomCode || roomCode.length !== 6) {
+                showNotification('Please enter a valid 6-character room code', 'error');
+                return;
+            }
+
+            showNotification('Checking lobby...', 'info');
+            
+            // First check if lobby exists
+            socket.emit('check_lobby', { room_code: roomCode });
+            
+            // Store the join attempt data
+            window.pendingJoin = { roomCode, playerName };
+        }
+
+        // Socket event listeners
+        socket.on('lobby_exists', (data) => {
+            if (data.exists) {
+                showNotification(`Found lobby with ${data.players} players. Joining...`, 'success');
+                // Proceed with joining
+                socket.emit('join_lobby', {
+                    room_code: window.pendingJoin.roomCode,
+                    player_name: window.pendingJoin.playerName
+                });
+            } else {
+                showNotification('Lobby not found. Please check the room code.', 'error');
+            }
+        });
+
+        socket.on('lobby_joined', (data) => {
+            showNotification('Successfully joined!', 'success');
+            setTimeout(() => {
+                window.location.href = `/lobby/${data.room_code}?name=${encodeURIComponent(data.players.find(p => p.id === socket.id)?.name || 'Anonymous')}`;
+            }, 1000);
+        });
+
+        socket.on('error', (data) => {
+            showNotification(data.message, 'error');
+        });
+
+        // Auto-focus on name input
+        document.getElementById('playerName').focus();
+
+        // Enter key handling
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                joinGame();
+            }
+        });
+
+        // Auto-uppercase room code
+        document.getElementById('roomCode').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        // Initialize
+        createStars();
+    </script>
+</body>
+</html>

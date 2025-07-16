@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Active Lobbies</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .lobby {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .lobby-code {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #00f5ff;
+        }
+        .player {
+            background: #333;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .host {
+            background: #ff6b6b;
+        }
+        .refresh-btn {
+            background: #00f5ff;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Active Lobbies</h1>
+    
+    <button class="refresh-btn" onclick="location.reload()">🔄 Refresh</button>
+    
+    <div>
+        <strong>Total Active Lobbies: {{ lobbies|length }}</strong>
+    </div>
+    
+    {% if lobbies %}
+        {% for room_code, lobby in lobbies.items() %}
+        <div class="lobby">
+            <div class="lobby-code">🏠 Room Code: {{ room_code }}</div>
+            <div><strong>Status:</strong> {{ lobby.status }}</div>
+            <div><strong>Host:</strong> {{ lobby.host }}</div>
+            <div><strong>Players ({{ lobby.players|length }}):</strong></div>
+            {% for player in lobby.players %}
+                <span class="player {% if player.id == lobby.host %}host{% endif %}">
+                    {{ player.name }} 
+                    {% if player.id == lobby.host %}👑{% endif %}
+                    <small>({{ player.id[:8] }}...)</small>
+                </span>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="lobby">
+            <p>No active lobbies found.</p>
+        </div>
+    {% endif %}
+    
+    <div style="margin-top: 30px;">
+        <a href="/" style="color: #00f5ff;">← Back to Home</a>
+    </div>
+    
+    <script>
+        // Auto-refresh every 5 seconds
+        setTimeout(() => {
+            location.reload();
+        }, 5000);
+    </script>
+</body>
+</html>

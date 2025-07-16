@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Imposter Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unified-style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="game-container">
+        <h1 class="page-title">🛠️ DEBUG MODE</h1>
+        
+        <div class="content-container">
+            <h3 style="color: var(--secondary-color); margin-bottom: 1.5rem; text-align: center;">Active Lobbies</h3>
+            
+            {% if lobbies %}
+                {% for room_code, lobby in lobbies.items() %}
+                    <div style="background: rgba(0, 0, 0, 0.2); border-radius: 8px; margin-bottom: 1rem; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Room: {{ room_code }}</h4>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <div style="color: var(--accent-color); margin-bottom: 0.5rem;">Status: {{ lobby.status }}</div>
+                            <div>Players: {{ lobby.players|length }}</div>
+                            <div>Host: {{ lobby.host }}</div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <h5 style="color: var(--text-gray); margin-bottom: 0.5rem;">Players:</h5>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem;">
+                                {% for player in lobby.players %}
+                                    <div style="background: rgba(255, 255, 255, 0.05); padding: 0.5rem; border-radius: 4px;">
+                                        {{ player.name }} 
+                                        {% if player.ready %}✅{% endif %}
+                                        {% if player.get('is_impostor') %}🕵️{% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        {% if lobby.get('secret_word') %}
+                            <div style="margin-bottom: 1rem;">
+                                <h5 style="color: var(--text-gray); margin-bottom: 0.5rem;">Game Info:</h5>
+                                <div>Secret Word: {{ lobby.secret_word }}</div>
+                                <div>Imposter Hints: {{ lobby.impostor_hints }}</div>
+                                <div>Selected Imposters: {{ lobby.selected_imposters }}</div>
+                            </div>
+                        {% endif %}
+                        
+                        <div>
+                            <a href="/debug/lobby/{{ room_code }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem;">View Details</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; color: var(--text-gray);">No active lobbies found.</div>
+            {% endif %}
+        </div>
+        
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="/" class="btn btn-primary">BACK TO HOME</a>
+        </div>
+    </div>
+
+    <script>
+        // Create stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', createStars);
+    </script>
+</body>
+</html>

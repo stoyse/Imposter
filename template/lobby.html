@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby - Imposter Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="game-container">
+        <div class="lobby-header">
+            <h1 class="game-title">🕵️ IMPOSTER</h1>
+            <div class="room-code-display">
+                <div class="room-code-label">Room Code</div>
+                <div class="room-code" id="roomCode">{{ room_code }}</div>
+                <button class="copy-btn" onclick="copyRoomCode()">📋 Copy</button>
+            </div>
+        </div>
+
+        <div class="lobby-content">
+            <div class="players-section">
+                <h2>Players in Lobby</h2>
+                <div class="players-list" id="playersList">
+                    <!-- Players will be dynamically added here -->
+                </div>
+                <div class="player-count">
+                    <span id="playerCount">1</span>/10 Players
+                </div>
+            </div>
+
+            <div class="game-controls">
+                <button class="btn btn-primary" id="readyBtn" onclick="toggleReady()">
+                    🚀 Ready to Start
+                </button>
+                
+                <div class="ready-status">
+                    <span id="readyCount">0</span>/<span id="totalPlayers">1</span> players ready
+                </div>
+                
+                <button class="btn btn-secondary" onclick="leaveLobby()">
+                    🚪 Leave Lobby
+                </button>
+            </div>
+        </div>
+
+        <div class="game-rules-mini">
+            <h3>Quick Rules:</h3>
+            <ul>
+                <li>Most players get a secret word</li>
+                <li>Imposters get only a hint</li>
+                <li>Describe the word without saying it</li>
+                <li>Vote to find the imposters!</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const roomCode = "{{ room_code }}";
+        let isReady = false;
+        let players = [];
+
+        // Initialize stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function updatePlayersList() {
+            const playersList = document.getElementById('playersList');
+            const playerCount = document.getElementById('playerCount');
+            
+            playersList.innerHTML = '';
+            players.forEach((player, index) => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player-item';
+                const readyStatus = player.ready ? '✅' : '⏳';
+                const isHost = index === 0 ? '<span class="host-badge">👑 Host</span>' : '';
+                playerDiv.innerHTML = `
+                    <span class="player-name">${player.name}</span>
+                    <span class="ready-indicator">${readyStatus}</span>
+                    ${isHost}
+                `;
+                playersList.appendChild(playerDiv);
+            });
+            
+            playerCount.textContent = players.length;
+        }
+
+        function updateReadyStatus(readyCount, totalPlayers, allReady) {
+            document.getElementById('readyCount').textContent = readyCount;
+            document.getElementById('totalPlayers').textContent = totalPlayers;
+            
+            const readyBtn = document.getElementById('readyBtn');
+            
+            if (allReady && totalPlayers >= 3) {
+                readyBtn.textContent = '🎮 All Ready - Starting Soon!';
+                readyBtn.disabled = true;
+                readyBtn.className = 'btn btn-success';
+            } else if (isReady) {
+                readyBtn.textContent = '⏳ Waiting for Others';
+                readyBtn.className = 'btn btn-warning';
+            } else {
+                readyBtn.textContent = '🚀 Ready to Start';
+                readyBtn.className = 'btn btn-primary';
+            }
+        }
+
+        function toggleReady() {
+            isReady = !isReady;
+            socket.emit('player_ready', {
+                room_code: roomCode,
+                ready: isReady
+            });
+            
+            // Update button immediately for better UX
+            const readyBtn = document.getElementById('readyBtn');
+            if (isReady) {
+                readyBtn.textContent = '⏳ Waiting for Others';
+                readyBtn.className = 'btn btn-warning';
+            } else {
+                readyBtn.textContent = '🚀 Ready to Start';
+                readyBtn.className = 'btn btn-primary';
+            }
+        }
+
+        function copyRoomCode() {
+            navigator.clipboard.writeText(roomCode).then(() => {
+                showNotification('Room code copied to clipboard!', 'success');
+            });
+        }
+
+        function leaveLobby() {
+            socket.emit('leave_lobby', { room_code: roomCode });
+            window.location.href = '/';
+        }
+
+        // Socket event listeners
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('lobby_joined', (data) => {
+            players = data.players;
+            updatePlayersList();
+            showNotification('Successfully joined lobby!', 'success');
+        });
+
+        socket.on('player_joined', (data) => {
+            players = data.players;
+            updatePlayersList();
+            showNotification(`${data.player_name} joined the lobby!`, 'info');
+        });
+
+        socket.on('player_left', (data) => {
+            players = data.players;
+            updatePlayersList();
+            showNotification('A player left the lobby', 'info');
+        });
+
+        socket.on('ready_status_update', (data) => {
+            players = data.players;
+            updatePlayersList();
+            updateReadyStatus(data.ready_count, data.total_players, data.all_ready);
+            
+            if (data.ready_count > 0) {
+                showNotification(`${data.ready_count}/${data.total_players} players ready`, 'info');
+            }
+        });
+
+        socket.on('game_starting', (data) => {
+            showNotification(data.message, 'success');
+            
+            // Show countdown
+            let countdown = data.countdown;
+            const countdownInterval = setInterval(() => {
+                showNotification(`Starting in ${countdown}...`, 'info');
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        });
+
+        socket.on('imposter_selection_started', (data) => {
+            showNotification('Starting imposter selection!', 'success');
+            setTimeout(() => {
+                window.location.href = `/imposter-selection/${roomCode}?name=${encodeURIComponent(playerName)}`;
+            }, 1000);
+        });
+
+        socket.on('redirect_to_selection', (data) => {
+            showNotification('All players ready! Starting imposter selection...', 'success');
+            setTimeout(() => {
+                window.location.href = `/imposter-selection/${data.room_code}?name=${encodeURIComponent(playerName)}`;
+            }, 1500);
+        });
+
+        socket.on('redirect_to_game', (data) => {
+            window.location.href = `/game/${data.room_code}?name=${encodeURIComponent(playerName)}`;
+        });
+
+        socket.on('error', (data) => {
+            showNotification(data.message, 'error');
+        });
+
+        // Initialize
+        createStars();
+        
+        // Check if we're coming from creating a lobby
+        const urlParams = new URLSearchParams(window.location.search);
+        const playerName = urlParams.get('name') || 'Anonymous';
+        
+        // Auto-join the lobby
+        socket.emit('join_lobby', {
+            room_code: roomCode,
+            player_name: playerName
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Imposter Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unified-style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="game-container">
+        <h1 class="page-title">🔍 ABOUT IMPOSTER</h1>
+        
+        <div class="content-container">
+            <div class="selection-info">
+                <p>The Imposter Game is a social deduction game inspired by classic word-guessing games.</p>
+            </div>
+            
+            <div style="margin: 2rem 0;">
+                <h3 style="margin-bottom: 1rem; color: var(--accent-color);">HOW TO PLAY</h3>
+                <ol style="list-style-position: inside; padding-left: 1rem; color: var(--text-gray);">
+                    <li style="margin-bottom: 0.8rem;">Players are divided into Innocents and Imposters</li>
+                    <li style="margin-bottom: 0.8rem;">Innocents receive a secret word</li>
+                    <li style="margin-bottom: 0.8rem;">Imposters receive only a hint related to the word</li>
+                    <li style="margin-bottom: 0.8rem;">Everyone takes turns describing the word without saying it directly</li>
+                    <li style="margin-bottom: 0.8rem;">Imposters must try to blend in despite not knowing the word</li>
+                    <li style="margin-bottom: 0.8rem;">After everyone has spoken, players vote on who they think the imposters are</li>
+                </ol>
+            </div>
+            
+            <div style="margin: 2rem 0;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">TIPS FOR INNOCENTS</h3>
+                <ul style="list-style-type: none; padding: 0;">
+                    <li style="margin-bottom: 0.8rem; padding-left: 1.5rem; position: relative;">
+                        <span style="position: absolute; left: 0; color: var(--primary-color);">➤</span>
+                        Be clever with your descriptions - too obvious and imposters can guess easily
+                    </li>
+                    <li style="margin-bottom: 0.8rem; padding-left: 1.5rem; position: relative;">
+                        <span style="position: absolute; left: 0; color: var(--primary-color);">➤</span>
+                        Pay attention to others' descriptions for inconsistencies
+                    </li>
+                    <li style="margin-bottom: 0.8rem; padding-left: 1.5rem; position: relative;">
+                        <span style="position: absolute; left: 0; color: var(--primary-color);">➤</span>
+                        Use subtle references that only those who know the word would understand
+                    </li>
+                </ul>
+            </div>
+            
+            <div style="margin: 2rem 0;">
+                <h3 style="margin-bottom: 1rem; color: var(--secondary-color);">TIPS FOR IMPOSTERS</h3>
+                <ul style="list-style-type: none; padding: 0;">
+                    <li style="margin-bottom: 0.8rem; padding-left: 1.5rem; position: relative;">
+                        <span style="position: absolute; left: 0; color: var(--secondary-color);">➤</span>
+                        Use your hint wisely to guide your descriptions
+                    </li>
+                    <li style="margin-bottom: 0.8rem; padding-left: 1.5rem; position: relative;">
+                        <span style="position: absolute; left: 0; color: var(--secondary-color);">➤</span>
+                        Keep descriptions vague but plausible
+                    </li>
+                    <li style="margin-bottom: 0.8rem; padding-left: 1.5rem; position: relative;">
+                        <span style="position: absolute; left: 0; color: var(--secondary-color);">➤</span>
+                        Listen carefully to others before speaking to pick up clues
+                    </li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="/" class="btn btn-primary">BACK TO HOMEPAGE</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', createStars);
+    </script>
+</body>
+</html>

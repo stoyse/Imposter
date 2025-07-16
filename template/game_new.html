@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game - Imposter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unified-style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="game-container">
+        <h1 class="page-title">🎭 IMPOSTER GAME</h1>
+        
+        <div class="content-container">
+            <div class="loading-screen" id="loadingScreen">
+                <div class="loading-spinner"></div>
+                <h2>🎭 ASSIGNING ROLES...</h2>
+                <p>Please wait while we determine who the imposters are</p>
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            
+            <!-- Role info - will be shown once roles are assigned -->
+            <div class="role-info" id="roleInfo" style="display: none; text-align: center; margin-bottom: 2rem;">
+                <div class="role-container">
+                    <div class="role-icon" id="roleIcon">🎭</div>
+                    <div class="role-details">
+                        <div class="role-title">YOUR ROLE</div>
+                        <div class="role-name" id="roleName">LOADING...</div>
+                        <div class="role-description" id="roleDescription"></div>
+                    </div>
+                </div>
+                <div class="word-container" id="wordContainer" style="display: none;">
+                    <div class="secret-word-label">SECRET WORD</div>
+                    <div class="secret-word" id="secretWord">LOADING...</div>
+                </div>
+                <div class="hint-container" id="hintContainer" style="display: none;">
+                    <div class="hint-label">YOUR HINT</div>
+                    <div class="hint-text" id="hintText">LOADING...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-container">
+            <div class="game-status-header">
+                <h3>PLAYERS IN GAME</h3>
+                <div class="countdown-display">
+                    <div class="countdown-label">VOTING ENDS IN</div>
+                    <div class="countdown-timer" id="countdownTimer">03:00</div>
+                </div>
+            </div>
+            
+            <div class="voting-instructions">
+                <p>You can vote for up to <span id="totalVotesAllowed">1</span> players as imposters!</p>
+            </div>
+            
+            <div class="players-grid" id="gamePlayers">
+                <!-- Players will be loaded here -->
+            </div>
+            
+            <div class="vote-info" id="voteInfo" style="margin-top: 1.5rem; text-align: center;">
+                Select a player to vote them as an imposter!
+            </div>
+        </div>
+        
+        <!-- Voting Results Overlay - Initially Hidden -->
+        <div class="voting-results-overlay" id="votingResultsOverlay" style="display: none;">
+            <div class="results-container">
+                <h2 class="results-title">VOTING RESULTS</h2>
+                <div class="imposters-reveal" id="impostersReveal">
+                    <!-- Imposters will be revealed here -->
+                </div>
+                <div class="vote-results-list" id="voteResultsList">
+                    <!-- Voting results will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+    const socket = io();
+    const roomCode = "{{ room_code }}";
+    let isImpostor = false;
+    let myRole = '';
+    let myVotes = [];
+    let totalImpostorCount = 1; // Default, will be updated when role is assigned
+    let votingEnded = false;
+
+    // Initialize stars background
+    function createStars() {
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Get player name from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const playerName = urlParams.get('name') || 'Anonymous';
+
+    // Initialize
+    createStars();
+
+    // Join the game room
+    socket.emit('join_game', {
+        room_code: roomCode,
+        player_name: playerName
+    });
+
+    // Request current voting timer
+    socket.emit('get_voting_timer', {
+        room_code: roomCode
+    });
+
+    // Socket event listeners
+    socket.on('role_assigned', (data) => {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('roleInfo').style.display = 'block';
+        
+        myRole = data.your_role;
+        isImpostor = data.is_impostor;
+        totalImpostorCount = data.total_impostors;
+        
+        // Update the voting instructions
+        document.getElementById('totalVotesAllowed').textContent = totalImpostorCount;
+        
+        // Update role display
+        document.getElementById('roleName').textContent = data.is_impostor ? 'IMPOSTER' : 'INNOCENT';
+        document.getElementById('roleIcon').textContent = data.is_impostor ? '🕵️' : '😇';
+        
+        let description = data.is_impostor ? 
+            `You are one of ${data.total_impostors} imposters among ${data.total_players} players. Try to blend in!` :
+            `You know the secret word. Try to identify the ${data.total_impostors} imposter${data.total_impostors > 1 ? 's' : ''}!`;
+        document.getElementById('roleDescription').textContent = description;
+        
+        // Show word or hint based on role
+        if (data.is_impostor) {
+            document.getElementById('hintContainer').style.display = 'block';
+            document.getElementById('hintText').textContent = data.hint;
+        } else {
+            document.getElementById('wordContainer').style.display = 'block';
+            document.getElementById('secretWord').textContent = data.word;
+        }
+        
+        // Update voting info
+        updateVoteInfo();
+        
+        showNotification(`You are ${data.is_impostor ? 'an IMPOSTER' : 'INNOCENT'}`, data.is_impostor ? 'error' : 'success');
+    });
+
+    socket.on('game_joined', (data) => {
+        if (data.voting_ended) {
+            votingEnded = true;
+            showNotification('Voting has ended', 'info');
+        }
+    });
+
+    socket.on('game_players_update', (data) => {
+        updatePlayersList(data.players);
+    });
+
+    socket.on('voting_timer_update', (data) => {
+        updateVotingTimer(data.seconds_left);
+        votingEnded = data.voting_ended || data.seconds_left === 0;
+    });
+
+    socket.on('impostors_revealed', (data) => {
+        revealImpostors(data.impostors);
+    });
+
+    socket.on('voting_results', (data) => {
+        showVotingResults(data);
+    });
+
+    socket.on('error', (data) => {
+        showNotification(data.message, 'error');
+    });
+    
+    socket.on('vote_status_update', (data) => {
+        myVotes = data.your_votes;
+        updatePlayersList();
+        updateVoteInfo();
+    });
+
+    function updatePlayersList(players = null) {
+        // If players is null, we just update the vote states
+        const playersGrid = document.getElementById('gamePlayers');
+        
+        if (players) {
+            // Full refresh of the player list
+            playersGrid.innerHTML = '';
+            
+            players.forEach(player => {
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                if (player.name === playerName) {
+                    playerCard.classList.add('current-player');
+                }
+                
+                const isVoted = myVotes.includes(player.name);
+                
+                playerCard.innerHTML = `
+                    <div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>
+                    <div class="player-name">${player.name}</div>
+                    <button class="vote-btn ${isVoted ? 'voted' : ''}" 
+                        ${votingEnded || player.name === playerName ? 'disabled' : ''}
+                        onclick="voteForPlayer('${player.name}')">
+                        ${isVoted ? '✓ Voted' : 'Vote'}
+                    </button>
+                `;
+                playersGrid.appendChild(playerCard);
+            });
+        } else {
+            // Just update the vote states of existing buttons
+            const voteButtons = document.querySelectorAll('.vote-btn');
+            voteButtons.forEach(btn => {
+                const playerNameElement = btn.parentElement.querySelector('.player-name');
+                if (!playerNameElement) return;
+                
+                const playerName = playerNameElement.textContent;
+                const isVoted = myVotes.includes(playerName);
+                
+                btn.classList.toggle('voted', isVoted);
+                btn.textContent = isVoted ? '✓ Voted' : 'Vote';
+            });
+        }
+        
+        updateVoteInfo();
+    }
+
+    function updateVoteInfo() {
+        const voteInfo = document.getElementById('voteInfo');
+        const votesLeft = totalImpostorCount - myVotes.length;
+        
+        if (myVotes.length === 0) {
+            voteInfo.innerHTML = `
+                <div>Select up to <b>${totalImpostorCount}</b> players to vote as imposters!</div>
+            `;
+        } else {
+            voteInfo.innerHTML = `
+                <div>Your votes: <b>${myVotes.join(', ')}</b></div>
+                <div>You have <b>${votesLeft}</b> ${votesLeft === 1 ? 'vote' : 'votes'} left</div>
+            `;
+        }
+    }
+
+    function voteForPlayer(name) {
+        if (votingEnded) {
+            showNotification('Voting has ended', 'warning');
+            return;
+        }
+        
+        if (name === playerName) {
+            showNotification('You cannot vote for yourself', 'warning');
+            return;
+        }
+        
+        socket.emit('vote_impostor', {
+            room_code: roomCode,
+            voted_player: name
+        });
+    }
+
+    function updateVotingTimer(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        const formattedTime = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        
+        const timer = document.getElementById('countdownTimer');
+        timer.textContent = formattedTime;
+        
+        // Add visual effects
+        if (seconds <= 30) {
+            timer.classList.add('urgent');
+        } else if (seconds <= 60) {
+            timer.classList.add('warning');
+        }
+        
+        if (seconds === 0) {
+            votingEnded = true;
+            showNotification('Voting has ended!', 'info');
+        }
+    }
+
+    function revealImpostors(impostors) {
+        votingEnded = true;
+        
+        const impostersReveal = document.getElementById('impostersReveal');
+        impostersReveal.innerHTML = `
+            <h3>THE IMPOSTER${impostors.length > 1 ? 'S' : ''} ${impostors.length > 1 ? 'WERE' : 'WAS'}:</h3>
+            <div class="imposters-list">
+                ${impostors.map(imp => `<div class="imposter-name">${imp}</div>`).join('')}
+            </div>
+        `;
+    }
+
+    function showVotingResults(data) {
+        const overlay = document.getElementById('votingResultsOverlay');
+        const resultsList = document.getElementById('voteResultsList');
+        const votes = data.votes;
+        const impostors = data.impostors || [];
+        
+        // Count votes for each player
+        const voteCounts = {};
+        
+        // Process the votes (now votes is an object where each value is an array)
+        Object.entries(votes).forEach(([voter, votedPlayers]) => {
+            if (!Array.isArray(votedPlayers)) {
+                // Handle legacy format (string values) if needed
+                const singleVote = votedPlayers;
+                if (singleVote && typeof singleVote === 'string') {
+                    if (!voteCounts[singleVote]) voteCounts[singleVote] = 0;
+                    voteCounts[singleVote]++;
+                }
+            } else {
+                // Handle new format (array values)
+                votedPlayers.forEach(player => {
+                    if (!voteCounts[player]) voteCounts[player] = 0;
+                    voteCounts[player]++;
+                });
+            }
+        });
+        
+        // Sort players by votes received (most votes first)
+        const sortedPlayers = Object.keys(voteCounts).sort((a, b) => {
+            return voteCounts[b] - voteCounts[a];
+        });
+        
+        resultsList.innerHTML = '<h3>VOTE COUNTS:</h3>';
+        
+        // Add vote results
+        sortedPlayers.forEach(player => {
+            const isImpostor = impostors.includes(player);
+            resultsList.innerHTML += `
+                <div class="vote-result-item ${isImpostor ? 'impostor-result' : ''}">
+                    <span class="voted-player">${player} ${isImpostor ? '🕵️' : ''}</span>
+                    <span class="vote-count">${voteCounts[player]} vote${voteCounts[player] !== 1 ? 's' : ''}</span>
+                </div>
+            `;
+        });
+        
+        // Add who voted for whom
+        resultsList.innerHTML += '<h3 style="margin-top: 1rem;">WHO VOTED FOR WHOM:</h3>';
+        
+        Object.entries(votes).forEach(([voter, votedPlayers]) => {
+            if (!Array.isArray(votedPlayers)) {
+                // Handle legacy format
+                const singleVote = votedPlayers;
+                if (singleVote && typeof singleVote === 'string') {
+                    resultsList.innerHTML += `
+                        <div class="vote-detail-item">
+                            <span class="voter">${voter}</span> 
+                            <span class="voted-arrow">→</span> 
+                            <span class="voted-for">${singleVote}</span>
+                        </div>
+                    `;
+                }
+            } else {
+                // Handle new array format
+                if (votedPlayers.length > 0) {
+                    resultsList.innerHTML += `
+                        <div class="vote-detail-item">
+                            <span class="voter">${voter}</span> 
+                            <span class="voted-arrow">→</span> 
+                            <span class="voted-for">${votedPlayers.join(', ')}</span>
+                        </div>
+                    `;
+                }
+            }
+        });
+        
+        overlay.style.display = 'flex';
+    }
+    </script>
+</body>
+</html>

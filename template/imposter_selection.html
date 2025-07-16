@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imposter Selection - Imposter Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <div class="imposter-selection-screen">
+            <h1 class="selection-title">🎯 CHOOSE IMPOSTERS</h1>
+            
+            <div class="countdown-display">
+                <div class="countdown-label">Time Remaining</div>
+                <div class="countdown-timer" id="countdownTimer">10</div>
+            </div>
+            
+            <div class="selection-info">
+                <p>Vote for the number of imposters in this game!</p>
+                <p class="player-info">
+                    <span id="playerCount">{{ player_count }}</span> players in game
+                </p>
+            </div>
+            
+            <div class="imposter-options" id="imposterOptions">
+                <!-- Options will be populated by JavaScript -->
+            </div>
+            
+            <div class="vote-results" id="voteResults" style="display: none;">
+                <h3>Final Result:</h3>
+                <div class="final-result" id="finalResult">
+                    <!-- Final voting result will be displayed here -->
+                </div>
+            </div>
+            
+            <div class="selection-footer">
+                <p>The option with the most votes will be selected!</p>
+                <p class="default-notice">If no votes are cast, 1 imposter will be chosen by default.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const roomCode = "{{ room_code }}";
+        let hasVoted = false;
+        let maxImposters = {{ max_imposters }};
+        let playerCount = {{ player_count }};
+
+        // Initialize the selection screen
+        function initializeSelection() {
+            createImposterOptions();
+        }
+
+        function createImposterOptions() {
+            const optionsContainer = document.getElementById('imposterOptions');
+            optionsContainer.innerHTML = '';
+
+            for (let i = 1; i <= maxImposters; i++) {
+                const option = document.createElement('div');
+                option.className = 'imposter-option';
+                option.innerHTML = `
+                    <button class="imposter-btn" onclick="voteForImposters(${i})" data-count="${i}">
+                        <span class="imposter-count">${i}</span>
+                        <span class="imposter-label">Imposter${i > 1 ? 's' : ''}</span>
+                    </button>
+                `;
+                optionsContainer.appendChild(option);
+            }
+        }
+
+        function voteForImposters(count) {
+            if (hasVoted) {
+                showNotification('You have already voted!', 'warning');
+                return;
+            }
+
+            socket.emit('vote_imposter_count', {
+                room_code: roomCode,
+                imposter_count: count
+            });
+
+            hasVoted = true;
+            
+            // Visual feedback
+            const buttons = document.querySelectorAll('.imposter-btn');
+            buttons.forEach(btn => {
+                if (parseInt(btn.dataset.count) === count) {
+                    btn.classList.add('voted');
+                } else {
+                    btn.disabled = true;
+                    btn.classList.add('disabled');
+                }
+            });
+
+            showNotification(`Voted for ${count} imposter${count > 1 ? 's' : ''}!`, 'success');
+        }
+
+        function updateCountdown(seconds) {
+            const timer = document.getElementById('countdownTimer');
+            timer.textContent = seconds;
+            
+            // Add visual effects
+            if (seconds <= 3) {
+                timer.classList.add('urgent');
+            } else if (seconds <= 5) {
+                timer.classList.add('warning');
+            }
+        }
+
+        function updateVoteDisplay(votes) {
+            // Don't show live voting results - only final results
+            console.log('Votes updated (hidden from players):', votes);
+        }
+
+        function showFinalResult(result) {
+            const voteResults = document.getElementById('voteResults');
+            const finalResult = document.getElementById('finalResult');
+            
+            voteResults.style.display = 'block';
+            finalResult.innerHTML = `
+                <div class="result-announcement">
+                    <div class="result-number">${result.selected_count}</div>
+                    <div class="result-text">Imposter${result.selected_count > 1 ? 's' : ''} Selected!</div>
+                    <div class="result-details">
+                        ${result.total_votes > 0 ? 
+                            `Based on ${result.total_votes} vote${result.total_votes !== 1 ? 's' : ''}` : 
+                            'Default selection (no votes cast)'
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        function showNotification(message, type = 'info') {
+            // Simple notification system
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#00f5ff' : type === 'warning' ? '#ffd700' : '#ff0080'};
+                color: #000;
+                padding: 1rem;
+                border-radius: 8px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Socket event listeners
+        socket.on('countdown_update', (data) => {
+            updateCountdown(data.countdown);
+            // Don't update vote display during voting
+        });
+
+        socket.on('vote_update', (data) => {
+            // Don't show live vote updates
+            console.log('Vote registered (hidden from players)');
+        });
+
+        socket.on('voting_finished', (data) => {
+            showFinalResult(data.result);
+            showNotification(`Voting complete! ${data.result.selected_count} imposter${data.result.selected_count > 1 ? 's' : ''} selected.`, 'success');
+        });
+
+        socket.on('game_starting', (data) => {
+            showNotification(data.message, 'success');
+            document.querySelector('.imposter-selection-screen').innerHTML = `
+                <h1 class="selection-title">🚀 GAME STARTING!</h1>
+                <div class="game-start-info">
+                    <p>${data.message}</p>
+                    <p>Redirecting to game...</p>
+                </div>
+            `;
+        });
+
+        socket.on('redirect_to_game', (data) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const playerName = urlParams.get('name') || 'Anonymous';
+            window.location.href = `/game/${data.room_code}?name=${encodeURIComponent(playerName)}`;
+        });
+
+        socket.on('error', (data) => {
+            showNotification(data.message, 'error');
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSelection();
+            
+            // Auto-join the room
+            const urlParams = new URLSearchParams(window.location.search);
+            const playerName = urlParams.get('name') || 'Anonymous';
+            
+            socket.emit('join_lobby', {
+                room_code: roomCode,
+                player_name: playerName
+            });
+        });
+    </script>
+</body>
+</html>
