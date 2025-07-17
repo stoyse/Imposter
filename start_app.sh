@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 # Script to set up Python venv, install requirements, and run the Flask app
 
 # Create venv if it doesn't exist
@@ -13,5 +13,5 @@ pip install --upgrade pip
 # Install requirements
 pip install -r requirements.txt
 
-# Run the app
-python app.py
+# Run the app with Gunicorn (WSGI)
+exec gunicorn -w 4 -b 127.0.0.1:9831 app:app

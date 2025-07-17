@@ -1,0 +1,20 @@
+[Unit]
+Description=Imposter game start for hackmate
+
+[Service]
+WorkingDirectory=/home/stoyse/Imposter
+
+# Uncomment ONE of the following. This is the actual command your service will run.
+# ExecStart=./venv/bin/python myservice.py
+# ExecStart=node server.js
+# ExecStart=npm start
+ExecStart=/home/stoyse/Imposter/start_app.sh
+StandardOutput=file:/home/stoyse/Imposter/imposter_output.txt
+StandardError=file:/home/stoyse/Imposter/imposter_error.txt
+# ExecStart=my-custom-command
+
+# Restart the service automatically if it fails
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
