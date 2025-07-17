@@ -10,26 +10,12 @@ import time
 # Add the utils directory to the path so we can import the AI function
 sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 from utils.ai_word_generator import get_word_and_hints
-from db_handler import db
 
 app = Flask(__name__, template_folder='template')
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = 'j8ncun43unc49nucvnv39nvvnriun2bu9nt4bntviorjngjuvrn3tugn4tun'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Initialize database connection
-try:
-    if db.connect():
-        print("✅ Database connected successfully")
-        # Enable database mode
-        USE_DATABASE = True
-    else:
-        print("❌ Database connection failed, using in-memory storage")
-        USE_DATABASE = False
-except Exception as e:
-    print(f"❌ Database error: {e}, using in-memory storage")
-    USE_DATABASE = False
-
-# Store active lobbies (fallback when database is not available)
+# Store active lobbies
 lobbies = {}
 
 # --- Voting Timer for Impostor Voting (Game Phase) ---
@@ -56,19 +42,6 @@ def start_game_voting_timer(room_code, duration=180):
         # Reveal impostors to all
         impostors = [p['name'] for p in lobby['players'] if p.get('is_impostor')]
         socketio.emit('impostors_revealed', {'impostors': impostors}, room=room_code)
-        
-        # Determine winner (simplified logic)
-        # In a real game, you'd have more complex win conditions
-        winner = 'impostors'  # Default assumption
-        
-        # Save game results to database
-        if USE_DATABASE and lobby.get('db_game_id'):
-            result_saved = db.save_game_result(lobby['db_game_id'], winner, impostors)
-            if result_saved:
-                print(f"✅ Game results saved to database")
-            else:
-                print("❌ Failed to save game results")
-        
         # Send voting results to all clients (server-side)
         votes = lobby.get('impostor_votes_final', {})
         selected_imposters = lobby.get('selected_imposters', 1)
@@ -151,34 +124,17 @@ def handle_create_lobby(data):
     room_code = generate_room_code()
     player_name = data.get('player_name', 'Anonymous')
     
-    if USE_DATABASE:
-        # Use database
-        result = db.create_lobby(room_code, player_name)
-        if result:
-            # Also store in memory for compatibility
-            lobbies[room_code] = {
-                'host': request.sid,
-                'players': [{'id': request.sid, 'name': player_name, 'ready': False}],
-                'status': 'waiting',
-                'db_lobby_id': result['lobby_id']
-            }
-            join_room(room_code)
-            print(f"✅ Lobby created in DB: {room_code} by {player_name}")
-            emit('lobby_created', {'room_code': room_code, 'player_name': player_name})
-        else:
-            emit('error', {'message': 'Failed to create lobby'})
-    else:
-        # Fallback to memory storage
-        lobbies[room_code] = {
-            'host': request.sid,
-            'players': [{'id': request.sid, 'name': player_name, 'ready': False}],
-            'status': 'waiting'
-        }
-        join_room(room_code)
-        print(f"Lobby created: {room_code} by {player_name}")
-        emit('lobby_created', {'room_code': room_code, 'player_name': player_name})
+    # Create new lobby
+    lobbies[room_code] = {
+        'host': request.sid,
+        'players': [{'id': request.sid, 'name': player_name, 'ready': False}],
+        'status': 'waiting'
+    }
     
+    join_room(room_code)
+    print(f"Lobby created: {room_code} by {player_name}")
     print(f"Active lobbies: {list(lobbies.keys())}")
+    emit('lobby_created', {'room_code': room_code, 'player_name': player_name})
 
 @socketio.on('join_lobby')
 def handle_join_lobby(data):
@@ -189,74 +145,28 @@ def handle_join_lobby(data):
     print(f"Available lobbies: {list(lobbies.keys())}")
     print(f"Player SID: {request.sid}")
     
-    if USE_DATABASE:
-        # Check database first
-        lobby_data = db.get_lobby(room_code)
-        if not lobby_data:
-            print(f"Lobby {room_code} not found in DB!")
-            emit('error', {'message': 'Lobby not found. Please check the room code.'})
-            return
-        
-        # Add player to database
-        player_result = db.add_player_to_lobby(room_code, player_name)
-        if not player_result:
-            emit('error', {'message': 'Failed to join lobby'})
-            return
-        
-        # Get updated player list from database
-        db_players = db.get_lobby_players(room_code)
-        players_list = [{'id': request.sid if p['name'] == player_name else 'db_player', 
-                        'name': p['name'], 'ready': False, 'is_host': p['is_host']} 
-                       for p in db_players]
-        
-        # Update in-memory lobby
-        if room_code not in lobbies:
-            lobbies[room_code] = {
-                'host': None,
-                'players': [],
-                'status': lobby_data['status']
-            }
-        
-        lobby = lobbies[room_code]
-        lobby['players'] = players_list
-        
-        # Set host if this is the host player
-        for player in players_list:
-            if player.get('is_host') and player['name'] == player_name:
-                lobby['host'] = request.sid
-                player['id'] = request.sid
-                break
-        
-        # Update current player's session ID
-        for player in lobby['players']:
-            if player['name'] == player_name:
-                player['id'] = request.sid
-                break
-                
+    if room_code not in lobbies:
+        print(f"Lobby {room_code} not found!")
+        emit('error', {'message': 'Lobby not found. Please check the room code.'})
+        return
+    
+    lobby = lobbies[room_code]
+    
+    # Check if player already in lobby by name (in case of reconnect)
+    existing_player = None
+    for player in lobby['players']:
+        if player['name'] == player_name:
+            existing_player = player
+            break
+    
+    if existing_player:
+        # Update the player's session ID (reconnect scenario)
+        existing_player['id'] = request.sid
+        print(f"Player {player_name} reconnected to lobby {room_code}")
     else:
-        # Fallback to memory storage
-        if room_code not in lobbies:
-            print(f"Lobby {room_code} not found!")
-            emit('error', {'message': 'Lobby not found. Please check the room code.'})
-            return
-        
-        lobby = lobbies[room_code]
-        
-        # Check if player already in lobby by name (in case of reconnect)
-        existing_player = None
-        for player in lobby['players']:
-            if player['name'] == player_name:
-                existing_player = player
-                break
-        
-        if existing_player:
-            # Update the player's session ID (reconnect scenario)
-            existing_player['id'] = request.sid
-            print(f"Player {player_name} reconnected to lobby {room_code}")
-        else:
-            # Add new player to lobby
-            lobby['players'].append({'id': request.sid, 'name': player_name, 'ready': False})
-            print(f"Player {player_name} joined lobby {room_code}")
+        # Add new player to lobby
+        lobby['players'].append({'id': request.sid, 'name': player_name, 'ready': False})
+        print(f"Player {player_name} joined lobby {room_code}")
     
     join_room(room_code)
     
@@ -306,18 +216,10 @@ def handle_check_lobby(data):
     print(f"Checking lobby: {room_code}")
     print(f"Available lobbies: {list(lobbies.keys())}")
     
-    if USE_DATABASE:
-        lobby_data = db.get_lobby(room_code)
-        if lobby_data:
-            players = db.get_lobby_players(room_code)
-            emit('lobby_exists', {'exists': True, 'players': len(players)})
-        else:
-            emit('lobby_exists', {'exists': False})
+    if room_code in lobbies:
+        emit('lobby_exists', {'exists': True, 'players': len(lobbies[room_code]['players'])})
     else:
-        if room_code in lobbies:
-            emit('lobby_exists', {'exists': True, 'players': len(lobbies[room_code]['players'])})
-        else:
-            emit('lobby_exists', {'exists': False})
+        emit('lobby_exists', {'exists': False})
 
 @socketio.on('player_ready')
 def handle_player_ready(data):
@@ -522,22 +424,6 @@ def finalize_imposter_selection(room_code):
         impostor_hints = word_data['hints']
         print(f"Generated word: {secret_word}")
         print(f"Generated hints: {impostor_hints}")
-        
-        # Create game record in database
-        if USE_DATABASE:
-            game_id = db.create_game(room_code, secret_word, ', '.join(impostor_hints), selected_imposters)
-            if game_id:
-                lobby['db_game_id'] = game_id
-                print(f"✅ Game created in DB with ID: {game_id}")
-                
-                # Update player roles in database
-                for player in players:
-                    player_data = db.get_player_by_name(room_code, player['name'])
-                    if player_data:
-                        db.update_player_role(player_data['id'], player['is_impostor'], player['role'])
-            else:
-                print("❌ Failed to create game in database")
-        
         # Assign hints to impostors and word to innocents
         impostor_index = 0
         for player in players:
@@ -698,32 +584,25 @@ def handle_vote_impostor(data):
     voted_player = data.get('voted_player')
     voter_sid = request.sid
     print(f"Received impostor vote in {room_code}: {voter_sid} voted for {voted_player}")
-    
     if room_code not in lobbies:
         emit('error', {'message': 'Lobby not found'})
         return
-    
     lobby = lobbies[room_code]
-    
     if 'impostor_votes_final' not in lobby:
         lobby['impostor_votes_final'] = {}
-    
     # Find voter name
     voter_name = None
     for p in lobby['players']:
         if p['id'] == voter_sid:
             voter_name = p['name']
             break
-    
     if not voter_name:
         emit('error', {'message': 'Voter not found in lobby'})
         return
-    
     # Prevent self-vote
     if voted_player == voter_name:
         emit('error', {'message': 'Du kannst nicht für dich selbst stimmen.'})
         return
-    
     # Only allow voting if timer not ended
     if lobby.get('voting_ended'):
         emit('error', {'message': 'Die Abstimmung ist beendet.'})
@@ -741,16 +620,6 @@ def handle_vote_impostor(data):
         # Remove vote if already voted for this player (toggle)
         lobby['impostor_votes_final'][voter_name].remove(voted_player)
         print(f"{voter_name} removed vote for {voted_player}")
-        
-        # Update database if available
-        if USE_DATABASE:
-            game = db.get_current_game(room_code)
-            if game:
-                voter_data = db.get_player_by_name(room_code, voter_name)
-                voted_data = db.get_player_by_name(room_code, voted_player)
-                if voter_data and voted_data:
-                    db.add_vote(game['id'], voter_data['id'], voted_data['id'])  # This will remove the vote (toggle)
-        
         # Return current votes to the player
         emit('vote_status_update', {
             'your_votes': lobby['impostor_votes_final'][voter_name],
@@ -767,15 +636,6 @@ def handle_vote_impostor(data):
     lobby['impostor_votes_final'][voter_name].append(voted_player)
     print(f"Current impostor votes: {lobby['impostor_votes_final']}")
     
-    # Update database if available
-    if USE_DATABASE:
-        game = db.get_current_game(room_code)
-        if game:
-            voter_data = db.get_player_by_name(room_code, voter_name)
-            voted_data = db.get_player_by_name(room_code, voted_player)
-            if voter_data and voted_data:
-                db.add_vote(game['id'], voter_data['id'], voted_data['id'])
-    
     # Return current votes to the player
     emit('vote_status_update', {
         'your_votes': lobby['impostor_votes_final'][voter_name],
@@ -784,4 +644,4 @@ def handle_vote_impostor(data):
 
 if __name__ == '__main__':
     print('Starting Imposter app...')
-    socketio.run(app, debug=True, host="0.0.0.0", port=9831)
+    socketio.run(app, debug=True, port=9831)

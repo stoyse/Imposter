@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Game - Imposter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unified-style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="game-container">
+        <h1 class="page-title">🎮 CREATE GAME</h1>
+        <div class="content-container">
+            <form id="createGameForm" class="create-game-form" method="post" action="/lobby">
+                <div class="input-group">
+                    <label for="creatorName">YOUR NAME</label>
+                    <input type="text" id="creatorName" name="creatorName" placeholder="Enter your name" maxlength="15" required>
+                </div>
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-primary" type="submit">CREATE ROOM</button>
+                    <a class="btn btn-secondary" style="margin-left: 1rem;" href="/">CANCEL</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        createStars();
+    </script>
+</body>
+</html>

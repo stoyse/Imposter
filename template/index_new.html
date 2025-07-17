@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imposter - Social Deduction Game</title>
+    <title>Imposter Game</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/unified-style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
@@ -11,164 +11,17 @@
     <div class="stars" id="stars"></div>
     <div class="game-container">
         <h1 class="page-title">🎭 IMPOSTER GAME</h1>
-        
-        <div class="content-container">
-            <div class="selection-info">
-                <p>Welcome to the Ultimate Social Deduction Experience!</p>
-                <p class="player-info">🕵️ Unmask the hidden imposters among your friends 🕵️</p>
-            </div>
-            
-            <div class="options-container">
-                <div class="option-btn" onclick="createGame()">
-                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎮</div>
-                    CREATE GAME
-                    <div style="font-size: 0.8rem; margin-top: 0.3rem; opacity: 0.8;">Host a new room</div>
+        <div class="content-container" style="max-width: 400px; margin: 0 auto;">
+            <form id="createLobbyForm" onsubmit="event.preventDefault(); submitCreateGame();">
+                <div class="input-group">
+                    <label for="creatorName">YOUR NAME</label>
+                    <input type="text" id="creatorName" placeholder="Enter your name" maxlength="15" required>
                 </div>
-                <div class="option-btn" onclick="joinGame()">
-                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
-                    JOIN GAME
-                    <div style="font-size: 0.8rem; margin-top: 0.3rem; opacity: 0.8;">Enter with room code</div>
-                </div>
-            </div>
-            
-            <!-- Game Features Section -->
-            <div class="features-section">
-                <h3>🌟 Game Features</h3>
-                <div class="features-grid">
-                    <div class="feature-item">
-                        <div class="feature-icon">👥</div>
-                        <div class="feature-title">3-12 Players</div>
-                        <div class="feature-desc">Perfect for small or large groups</div>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">⏱️</div>
-                        <div class="feature-title">Quick Rounds</div>
-                        <div class="feature-desc">5-15 minute games</div>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">🧠</div>
-                        <div class="feature-title">Strategy & Bluff</div>
-                        <div class="feature-desc">Outsmart your friends</div>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">💬</div>
-                        <div class="feature-title">Social Interaction</div>
-                        <div class="feature-desc">Talk, discuss, deduce</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- How to Play Section -->
-            <div class="game-info">
-                <h3>🎯 How to Play</h3>
-                <div class="how-to-play">
-                    <div class="play-step">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <div class="step-icon">👑</div>
-                            <div class="step-title">Create or Join</div>
-                            <div class="step-desc">Host creates a room, others join with code</div>
-                        </div>
-                    </div>
-                    <div class="play-step">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <div class="step-icon">🎭</div>
-                            <div class="step-title">Get Your Role</div>
-                            <div class="step-desc">Innocent players get the word, imposters get a hint</div>
-                        </div>
-                    </div>
-                    <div class="play-step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <div class="step-icon">💭</div>
-                            <div class="step-title">Discuss & Deduce</div>
-                            <div class="step-desc">Talk about the topic without revealing the word</div>
-                        </div>
-                    </div>
-                    <div class="play-step">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <div class="step-icon">🗳️</div>
-                            <div class="step-title">Vote</div>
-                            <div class="step-desc">Identify and vote out the imposters!</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="game-modes">
-                    <h4>🎲 Game Modes</h4>
-                    <div class="modes-list">
-                        <div class="mode-item">
-                            <span class="mode-icon">⚡</span>
-                            <span class="mode-name">Quick Game</span>
-                            <span class="mode-desc">- 1 imposter, fast rounds</span>
-                        </div>
-                        <div class="mode-item">
-                            <span class="mode-icon">🔥</span>
-                            <span class="mode-name">Chaos Mode</span>
-                            <span class="mode-desc">- Multiple imposters, harder detection</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tips Section -->
-            <div class="tips-section">
-                <h3>💡 Pro Tips</h3>
-                <div class="tips-grid">
-                    <div class="tip-item">
-                        <span class="tip-icon">😇</span>
-                        <span class="tip-text"><strong>As Innocent:</strong> Give subtle clues about the word without saying it directly</span>
-                    </div>
-                    <div class="tip-item">
-                        <span class="tip-icon">🕵️</span>
-                        <span class="tip-text"><strong>As Imposter:</strong> Listen carefully and try to blend in with vague responses</span>
-                    </div>
-                    <div class="tip-item">
-                        <span class="tip-icon">👂</span>
-                        <span class="tip-text"><strong>For All:</strong> Pay attention to who seems confused or too vague</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Join Game Form - Initially Hidden -->
-        <div id="joinGameForm" class="content-container" style="display: none;">
-            <h3 class="page-title" style="font-size: 1.8rem;">JOIN A GAME</h3>
-            
-            <div class="input-group">
-                <label for="roomCode">ROOM CODE</label>
-                <input type="text" id="roomCode" placeholder="Enter the 6-digit room code" maxlength="6">
-            </div>
-            
-            <div class="input-group">
-                <label for="playerName">YOUR NAME</label>
-                <input type="text" id="playerName" placeholder="Enter your name" maxlength="15">
-            </div>
-            
-            <div style="text-align: center; margin-top: 2rem;">
-                <button class="btn btn-primary" onclick="submitJoinGame()">JOIN ROOM</button>
-                <button class="btn btn-secondary" style="margin-left: 1rem;" onclick="cancelJoinGame()">CANCEL</button>
-            </div>
-        </div>
-        
-        <!-- Create Game Form - Initially Hidden -->
-        <div id="createGameForm" class="content-container" style="display: none;">
-            <h3 class="page-title" style="font-size: 1.8rem;">CREATE A GAME</h3>
-            
-            <div class="input-group">
-                <label for="creatorName">YOUR NAME</label>
-                <input type="text" id="creatorName" placeholder="Enter your name" maxlength="15">
-            </div>
-            
-            <div style="text-align: center; margin-top: 2rem;">
-                <button class="btn btn-primary" onclick="submitCreateGame()">CREATE ROOM</button>
-                <button class="btn btn-secondary" style="margin-left: 1rem;" onclick="cancelCreateGame()">CANCEL</button>
-            </div>
+                <button class="btn btn-primary" type="submit" style="width: 100%; margin-bottom: 1.5rem;">Create Lobby</button>
+            </form>
+            <a href="/join" class="btn btn-secondary" style="width: 100%; text-align: center;">Join Lobby</a>
         </div>
     </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <script>
         // Create stars background
@@ -183,77 +36,25 @@
                 starsContainer.appendChild(star);
             }
         }
-        
-        // Initialize
         createStars();
-        
-        // Socket.io connection
         const socket = io();
-        
-        // Show/hide forms
-        function joinGame() {
-            document.getElementById('joinGameForm').style.display = 'block';
-            document.getElementById('createGameForm').style.display = 'none';
-        }
-        
-        function createGame() {
-            document.getElementById('createGameForm').style.display = 'block';
-            document.getElementById('joinGameForm').style.display = 'none';
-        }
-        
-        function cancelJoinGame() {
-            document.getElementById('joinGameForm').style.display = 'none';
-        }
-        
-        function cancelCreateGame() {
-            document.getElementById('createGameForm').style.display = 'none';
-        }
-        
-        function submitJoinGame() {
-            const roomCode = document.getElementById('roomCode').value.toUpperCase();
-            const playerName = document.getElementById('playerName').value.trim();
-            
-            if (!roomCode || !playerName) {
-                showNotification('Please enter both room code and name', 'error');
-                return;
-            }
-            
-            socket.emit('check_lobby', {room_code: roomCode});
-            
-            socket.once('lobby_exists', function(data) {
-                if (data.exists) {
-                    window.location.href = `/lobby/${roomCode}?name=${encodeURIComponent(playerName)}`;
-                } else {
-                    showNotification('Room not found', 'error');
-                }
-            });
-        }
-        
         function submitCreateGame() {
             const playerName = document.getElementById('creatorName').value.trim();
-            
             if (!playerName) {
                 showNotification('Please enter your name', 'error');
                 return;
             }
-            
             socket.emit('create_lobby', {player_name: playerName});
-            
             socket.once('lobby_created', function(data) {
                 window.location.href = `/lobby/${data.room_code}?name=${encodeURIComponent(playerName)}`;
             });
         }
-        
-        // Notification function
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = 'notification ' + type;
             notification.textContent = message;
             document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
+            setTimeout(() => { notification.remove(); }, 3000);
         }
     </script>
 </body>
